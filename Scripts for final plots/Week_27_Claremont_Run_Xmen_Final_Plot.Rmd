@@ -1,0 +1,67 @@
+---
+title: "Week_27_Claremont_Run_Xmen_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "6/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+Loading packages
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(yarrr)
+library(patchwork)
+```
+
+Reading in Data
+```{r}
+character_visualization <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/character_visualization.csv')
+```
+
+Modifying Character names and calculating totals for each character.
+```{r}
+character_visualization %>% 
+  mutate(character = if_else(str_detect(character,"=")==T, sub(" =.*", "", character),character)) %>% 
+  mutate(character = if_else(str_detect(character,"\\(")==T, sub(" \\(.*", "", character),character))
+  count(character)
+
+#Calculating total numbers for each character
+char_grouped  = character_visualization %>% 
+  mutate(character = if_else(str_detect(character,"=")==T, sub(" =.*", "", character),character)) %>% 
+  mutate(character = if_else(str_detect(character,"\\(")==T, sub(" \\(.*", "", character),character)) %>% 
+  mutate(character = if_else(str_detect(character,"\\(")==T, sub("\\(.*", "", character),character)) %>% 
+  group_by(character) %>% 
+  summarise(Speech = sum(speech),Thought = sum(thought), Narrative = sum(narrative), 
+            Depicted = sum(depicted))
+```
+
+Creating Final Plot
+```{r}
+xmen = piratepal(palette = "xmen")
+a = char_grouped %>%
+  pivot_longer(-character, names_to = "what", values_to = "count") %>% 
+  ggplot(aes(fill = what, y = count, x = character))+ 
+  geom_bar(position="stack", stat="identity")+ coord_flip()+
+  scale_fill_manual(values = c("#026CCBFF", "#F51E02FF", "#05B102FF", "#FB9F53FF"))+
+  labs(x = "Character", y = "Count", title = "By Count", fill = "")+
+  theme_classic()+
+  theme(legend.position = "none")
+
+b = char_grouped %>%
+  pivot_longer(-character, names_to = "what", values_to = "count") %>% 
+  ggplot(aes(fill = what, y = count, x = character))+  #, alpha = .99
+  geom_bar(position="fill", stat="identity")+ coord_flip()+
+  scale_fill_manual(values = c("#026CCBFF", "#F51E02FF", "#05B102FF", "#FB9F53FF"))+
+  labs(x = NULL, y = "Percent", title = "By Percentage", fill = "")+
+  theme_classic()
+  
+a+b+plot_annotation(title = "How Characters Appear in the Claremont Run", theme = theme(plot.title = element_text(hjust = 0.5, size = 24), plot.subtitle = element_text(hjust = 0.5, size = 16)), subtitle = "Comparing total observations to percentages", caption = "@danielpballer")
+```
