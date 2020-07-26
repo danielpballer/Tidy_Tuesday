@@ -1,0 +1,47 @@
+---
+title: "Week_26_Caribou_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "6/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load Packages
+```{r}
+library(tidyverse)
+library(ggmap)
+library(patchwork)
+```
+
+Get the data
+```{r}
+# Get the Data
+individuals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-23/individuals.csv')
+locations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-23/locations.csv')
+```
+
+Making final plot comparing winter and summer routes colored by study site.  
+```{r}
+#Creating the map boundries
+box = c(left = min(locations$longitude)-.5, right = max(locations$longitude)+.5,
+        top = max(locations$latitude)+.5, bottom = min(locations$latitude)-.5)
+
+#Creating the map
+carabou_map = get_map(location = box, maptype = "terrain", source = "google")
+
+#Winter Paths
+winter = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(study_site)), data = locations %>% filter(season=="Winter"))+
+  labs(x = "longitude", y = "latitude", title = "Winter routes", color = "Study Site")
+
+#Summer paths
+summer = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(study_site)), data = locations %>% filter(season=="Summer"))+
+  labs(x = "longitude", y = "latitude", title = "Summer routes", color = "Study Site")
+
+full_plot = winter+summer 
+full_plot + plot_layout(guides = 'collect') & plot_annotation(title = "Caribou Routes by Season", caption = "@danielpballer")
+```

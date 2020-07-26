@@ -1,0 +1,99 @@
+---
+title: "Caribou"
+author: "MAJ Daniel Baller"
+date: "6/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load Packages
+```{r}
+library(tidyverse)
+library(ggmap)
+library(patchwork)
+```
+
+Get the data
+```{r}
+# Get the Data
+individuals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-23/individuals.csv')
+locations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-23/locations.csv')
+```
+
+Saving the data
+```{r}
+write_csv(individuals, "week26_individuals.csv")
+write_csv(locations, "week26_locations.csv")
+```
+
+First map looking at caribou paths
+```{r}
+box = c(left = min(locations$longitude)-.5, right = max(locations$longitude)+.5,
+        top = max(locations$latitude)+.5, bottom = min(locations$latitude)-.5)
+carabou_map = get_map(location = box, maptype = "terrain", source = "google")
+ggmap(carabou_map)
+ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = locations)+
+  theme(legend.position = "none") 
+```
+
+First map looking at caribou paths colored by animal id
+```{r}
+#Winter Paths
+winter = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = locations %>% filter(season=="Winter"))+
+  theme(legend.position = "none") 
+#Summer paths
+summer = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = locations %>% filter(season=="Summer"))+
+  theme(legend.position = "none") 
+
+winter+summer
+```
+
+Looking at differences between male and female paths colored by animal id
+```{r}
+df = individuals %>% left_join(locations, by = "animal_id")
+#Winter Paths
+winter_m = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = df %>% filter(season=="Winter" & sex == "m"))+
+  theme(legend.position = "none") 
+winter_f = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = df %>% filter(season=="Winter" & sex == "f"))+
+  theme(legend.position = "none") 
+
+#Summer paths
+summer_m = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = df %>% filter(season=="Summer" & sex == "m"))+
+  theme(legend.position = "none") 
+summer_f = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(animal_id)), data = df %>% filter(season=="Summer" & sex == "f"))+
+  theme(legend.position = "none") 
+
+
+male = winter_m+summer_m
+female = winter_f+summer_f
+male/female
+
+individuals %>% count(sex)
+```
+
+Making final plot comparing winter and summer routes colored by study site.  
+```{r}
+#Winter Paths
+winter = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(study_site)), data = locations %>% filter(season=="Winter"))+
+  labs(x = "longitude", y = "latitude", title = "Winter routes", color = "Study Site")
+
+#Summer paths
+summer = ggmap(carabou_map)+
+  geom_path(aes(x = longitude, y = latitude, color = factor(study_site)), data = locations %>% filter(season=="Summer"))+
+  labs(x = "longitude", y = "latitude", title = "Summer routes", color = "Study Site")
+
+full_plot = winter+summer 
+full_plot + plot_layout(guides = 'collect') & plot_annotation(title = "Caribou Routes by Season", caption = "@danielpballer")
+```
+
