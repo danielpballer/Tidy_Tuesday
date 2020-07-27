@@ -1,0 +1,82 @@
+---
+title: "Week_29_Astronauts_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "7/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+Loading Packages
+```{r}
+library(tidyverse)
+library(ggdark)
+```
+
+Reading in Data
+```{r}
+astronauts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-14/astronauts.csv')
+```
+
+Stats on the U.S. and U.S.S.R./Russia
+```{r}
+#Number above and below the average
+astronauts %>% 
+  filter(nationality =="U.S." | nationality == "U.S.S.R/Russia") %>% 
+  group_by(nationality) %>% 
+  group_by(name) %>% 
+  filter(mission_number == max(mission_number)) %>% 
+  ungroup() %>% 
+  #count(nationality) %>% 
+  mutate(Above = ifelse(total_hrs_sum - mean(total_hrs_sum) > 0, "Longer than average", "Shorter than average")) %>% 
+  count(nationality, Above)
+
+#Total mission hours per country  
+astronauts %>% 
+  filter(nationality =="U.S." | nationality == "U.S.S.R/Russia") %>% 
+  group_by(nationality) %>% 
+  group_by(name) %>% 
+  filter(mission_number == max(mission_number)) %>% 
+  ungroup() %>% 
+  #count(nationality) %>% 
+  mutate(Above = ifelse(total_hrs_sum - mean(total_hrs_sum) > 0, "Longer than average", "Shorter than average")) %>% 
+  group_by(nationality) %>% 
+  summarize(total = sum(total_hrs_sum))
+  
+#calculating mean and median of total hours
+astronauts %>% summarise(mean(total_hrs_sum), median(total_hrs_sum))
+```
+
+Final Plot
+```{r}
+#Creating the Final Plot
+ast2 = astronauts %>% 
+  filter(nationality =="U.S." | nationality == "U.S.S.R/Russia") %>% 
+  mutate(nationality = if_else(nationality =="U.S.", "United States", nationality)) %>% 
+  mutate(nationality = if_else(nationality =="U.S.S.R/Russia", "U.S.S.R./Russia", nationality)) %>%
+  mutate(nationality = factor(nationality, levels = c("United States","U.S.S.R./Russia"))) %>%
+ # mutate(nationality = fct_reorder(nationality, levels = c("United States","U.S.S.R./Russia"))) %>% 
+  mutate(name = as.factor(name)) %>% 
+  mutate(name = fct_reorder(name, total_hrs_sum, .fun = 'max')) %>% 
+  mutate(Above = ifelse(total_hrs_sum - mean(total_hrs_sum) > 0, "Longer than average", "Shorter than average")) %>% 
+  ggplot(aes(x = total_hrs_sum, y = name, color = Above)) +
+        geom_segment(aes(x = 2968, y = name, xend = total_hrs_sum, yend = name), color = "grey50", size = .3) + 
+        geom_point(size = .8)+
+  scale_color_manual(values = c("green", "red"))+
+        facet_wrap(~nationality)+
+  #geom_line(x = 932, color = "red")+
+  labs(y = "Name", x = "Total Mission Hours in Space", color = NULL, title = "Comparing United States and U.S.S.R./Russian Astronaut's Time in Space", subtitle = "62 of the United States' 334 astronauts (18.5%) and 74 of the U.S.S.R./Russia's 122 astronauts (60.7%) have exceeded the avererage total mission \nhours in space of all astronauts (2,968 hours). Astronauts from the U.S.S.R./Russia have spent a total of 685,908 hours in space compared to \n500,638 total hours for United States astronauts.", caption = "Graphic: @danielpballer | Data: Mariya Stavnichuk and Tatsuya Corlett")+
+  dark_theme_bw()+
+  #dark_theme_void()+
+  theme(axis.text.y = element_text(size = 1), plot.title = element_text(size = 22), axis.ticks = element_blank())
+
+#Saving as high res image
+ggsave(filename="Week28 Astronauts.png", plot=ast2, device="png", height=8.5, width=11, units="in", dpi=800)
+```
+
