@@ -1,0 +1,45 @@
+---
+title: "Coffee2"
+author: "Daniel Baller"
+date: "7/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Loading Packages
+```{r}
+library(tidyverse)
+library(ggridges)
+library(ggdark)
+```
+Reading in Data
+```{r}
+coffee_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+```
+Ridge Plot of Total Cup Points by Country
+```{r}
+# Creating a list of countries with at least 5 observations.
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>%  
+  count(country_of_origin, sort = T) %>% 
+  filter(n>5) %>% 
+  select(country_of_origin)->country
+
+#Creating the plot
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  filter(country_of_origin %in% country$country_of_origin) %>% 
+  mutate(country_of_origin = as.factor(country_of_origin)) %>% 
+  mutate(country_of_origin = fct_reorder(country_of_origin, total_cup_points, .fun = 'max')) %>% 
+ggplot(aes(x = total_cup_points, y = country_of_origin, fill = stat(x)))+ 
+  #scale_fill_gradient(low = "white", high = "chocolate4")+
+  scale_fill_viridis_c(option = "C")+
+  labs(x = "Total Cup Points", y = "Country", color = "Cupper points", title = "Distribution of Total Cup Points By Country", subtitle = "Countries are in order of max total cup points.  Black line shows median of each distribution.",  fill = "Total Cup Points", caption = "@danielpballer")+
+  geom_density_ridges_gradient(scale = 3, quantile_lines = TRUE, quantiles = 2, color = "black")+
+  dark_theme_classic()
+```
+

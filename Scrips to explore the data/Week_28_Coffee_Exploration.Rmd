@@ -1,0 +1,234 @@
+---
+title: "Tidy-Tuesday-28-Coffee"
+author: "MAJ Daniel Baller"
+date: "7/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+Loading packages
+```{r}
+library(tidyverse)
+library(ggcharts)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+library(ggthemes)
+library(hrbrthemes)
+library(ggthemr)
+library(ggdark)
+library(magick)
+library(cowplot)
+library(ggridges)
+library(ggpomological)
+library(istack)
+library(ggbeeswarm)
+library(patchwork)
+```
+
+Reading in data
+```{r}
+coffee_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+```
+
+Saving Data
+```{r}
+write_csv(coffee_ratings, "week28_coffee_ratings.csv")
+```
+
+Lolypop and dumbbell charts of average total cup points by country
+```{r}
+coffee_ratings %>% 
+  filter(country_of_origin != "NA") %>% 
+  group_by(country_of_origin) %>% 
+  summarize(Mean = mean(total_cup_points), min = min(total_cup_points), max = max(total_cup_points)) %>% 
+  lollipop_chart(x = country_of_origin, y = Mean) +
+  labs(
+    x = "Country",
+    y = "Total Cup Points",
+    title = "Average cupping score"
+  ) #+
+#  scale_x_continuous(limits = c(6, 9))
+
+coffee_ratings %>% 
+  filter(country_of_origin != "NA") %>% 
+  filter(cupper_points > .1) %>% 
+  group_by(country_of_origin) %>% 
+  summarize(Mean = mean(total_cup_points), min = min(total_cup_points), max = max(total_cup_points)) %>% 
+  dumbbell_chart(x = country_of_origin, 
+                y1 = min, 
+                y2 = max, 
+                top_n = 25,
+                point_colors = c("lightgray", "#494F5C")) +
+  labs(
+    x = "Country",
+    y = "Total Cup Points",
+    title = "Total cup points by country"
+  )+
+  theme_modern_rc()
+```
+
+Dumbbell plot of average total cup points by variety
+```{r}
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points > .1) %>% 
+  group_by(variety) %>% 
+  summarize(Mean = mean(total_cup_points), min = min(total_cup_points), max = max(total_cup_points)) %>% 
+  dumbbell_chart(x = variety, 
+                y1 = min, 
+                y2 = max,
+                top_n = 20,
+                point_colors = c("lightgray", "#494F5C")) +
+  labs(
+    x = "Variety",
+    y = "Total Cup Points",
+    title = "Average cupping score"
+  ) +
+  theme_()
+```
+
+Boxplots of flavor by country.  Trying to get a background image to work
+```{r}
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot()+geom_boxplot(aes(y = flavor, x = variety, fill = variety))+
+  coord_flip()+
+  theme_classic()
+
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot(aes(color = variety))+geom_beeswarm(aes(y = total_cup_points, x = variety, fill = variety), dodge.width=.8,cex=2)+
+  coord_flip()+
+  theme_classic()
+
+img <-  %>%
+  image_resize("570x380") %>%
+  image_colorize(35, "white")
+
+    img = "https://images.unsplash.com/photo-1447933601403-0c6688de566e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=956&q=80"
+
+ggdraw() + 
+  draw_image(img) + 
+  draw_plot(p)
+```
+
+Scatter plot of aroma vs flavor, colored by total cup points
+```{r}
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot()+geom_point(aes(x = aroma, y = flavor, color = total_cup_points))+
+  scale_color_gradient(low = "white", high = "chocolate4")+
+  labs(x = "Aroma Grade", y = "Flavor Grade", color = "Cupper Points", 
+       title = "How flavor and aroma affect coffee grading", caption = "@danielpballer")+
+  dark_theme_classic()
+ 
+coffee_ratings %>% 
+  group_by(country_of_origin) %>% count() %>% 
+  arrange(desc(n))
+
+```
+
+Ridge plot of cupper point density by country
+```{r}
+ coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>%  
+  count(country_of_origin, sort = T) %>% 
+  filter(n>5) %>% 
+  select(country_of_origin)->country
+
+ coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  filter(country_of_origin %in% country$country_of_origin) %>% 
+  mutate(country_of_origin = as.factor(country_of_origin)) %>% 
+  mutate(country_of_origin = fct_reorder(country_of_origin, total_cup_points, .fun = 'max')) %>% 
+ggplot(aes(x = total_cup_points, y = country_of_origin, fill = stat(x)))+ 
+  #scale_fill_gradient(low = "white", high = "chocolate4")+
+  scale_fill_viridis_c(option = "C")+
+  labs(x = "Total Cup Points", y = "Country", color = "Cupper points", title = "Distribution of Total Cup Points By Country", subtitle = "Countries are in order of max total cup points.  Black line shows median of each distribution.",  fill = "Total Cup Points", caption = "@danielpballer")+
+  geom_density_ridges_gradient(scale = 3, quantile_lines = TRUE, quantiles = 2, color = "black")+
+  #theme_solarized_2()
+  # theme(plot.title=element_text(size=30))
+  dark_theme_classic()
+
+a+plot_annotation(title = "Density curves of Total Cup Points By Country")
+```
+
+```{r}
+
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot(aes(fill = variety)) + 
+        geom_tile(color = "black", size = 0.5) 
+```
+
+```{r}
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot()+
+  geom_bar(aes(y = country_of_origin, fill=variety), width = 0.5) + 
+  #theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  labs(title="Variety of coffee by Country", 
+       subtitle="count", 
+       caption="@danielpballer")+
+  dark_theme_classic()
+
+coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>% 
+  ggplot()+
+  geom_bar(aes(y = country_of_origin, fill=variety), width = 0.5) + 
+  #theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  labs(title="Variety of coffee by Country", 
+       subtitle="count", 
+       caption="@danielpballer")
+ # dark_theme_classic()
+```
+
+Diverging normalized lolypop chart average total cup points by country
+```{r}
+coffee_ratings %>% 
+  filter(country_of_origin != "NA") %>% 
+  group_by(country_of_origin) %>% 
+  summarize(Mean = mean(total_cup_points), min = min(total_cup_points), max = max(total_cup_points)) %>%
+  mutate(Mean = scale(Mean)) %>% 
+diverging_lollipop_chart(
+  x = country_of_origin,
+  y = Mean,
+  lollipop_colors = c("#006400", "#b32134"),
+  text_color = c("#006400", "#b32134")
+)
+```
+
+tried making a pictogram. didn't work
+```{r}
+ coffee_ratings %>% 
+  filter(variety != "NA") %>% 
+  filter(cupper_points>0.1) %>%  
+  count(country_of_origin, sort = T) %>% 
+  filter(n>5) %>% 
+  select(country_of_origin)->country 
+  
+coffee_ratings %>% 
+  filter(country_of_origin %in% country$country_of_origin) %>% 
+  istack(var = 'country_of_origin', 
+            group = 'variety', 
+            icon = "https://image.flaticon.com/icons/svg/31/31082.svg",
+            size = 0.025,
+            asp = 3)
+```
+
