@@ -1,0 +1,57 @@
+---
+title: "Week_32_European_Energy_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "8/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r Loading Packages}
+library(tidyverse)
+library(RColorBrewer)
+library(ggthemes)
+```
+
+```{r Reading in data}
+energy_types <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/energy_types.csv')
+country_totals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/country_totals.csv')
+```
+
+Pivioting the Data Wide to Long
+```{r}
+energy_long = energy_types %>% 
+  pivot_longer(c(`2016`, `2017`, `2018`), names_to = "year", values_to = "amount")
+```
+
+Final Plot
+```{r}
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy", 
+       subtitle = "Max energy production for any category was Conventional Thermal in 2017 at 1,838,782 GWh (Gigawatt hours)",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_hermit()+
+  scale_y_discrete(breaks=NULL)+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(plot.title = element_text(hjust = 0.5, size = 26),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+```
+

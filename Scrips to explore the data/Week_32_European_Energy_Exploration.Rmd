@@ -1,0 +1,264 @@
+---
+title: "Week32_European_Energy_Exploration"
+author: "MAJ Daniel Baller"
+date: "8/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r Loading Packages}
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggcharts)
+library(bbplot)
+library(showtext)
+library(RColorBrewer)
+library(ggthemes)
+```
+
+```{r Loading data}
+energy_types <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/energy_types.csv')
+country_totals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/country_totals.csv')
+```
+
+```{r saving data}
+write_csv(energy_types, "energy_types.csv")
+write_csv(country_totals, "country_totals.csv")
+```
+
+Creating a European map
+```{r}
+europe = ne_countries(continent = "europe",  returnclass = "sf")
+class(europe)
+europe_points <- cbind(europe, st_coordinates(st_centroid(europe$geometry)))
+ggplot(data = europe) + 
+  geom_sf(aes(fill = pop_est))+
+  coord_sf(xlim = c(-30, 50),ylim = c(30, 85), expand = F)
+#  geom_text(data= europe_points,aes(x=X, y=Y, label=name),
+#    color = "darkblue", fontface = "bold", check_overlap = T)
+
+```
+
+Line Plot of inport and exports by country
+```{r}
+country_long = country_totals %>% 
+  pivot_longer(c(`2016`, `2017`, `2018`), names_to = "year", values_to = "amount")
+
+country_long %>% 
+  filter(type == "Exports"|type == "Imports") %>% 
+  ggplot(aes(x = year, y = amount, color = country, group = country))+geom_line()+facet_wrap(~type)
+```
+
+dumbell chart of import and export by country
+```{r}
+country_wide = country_totals %>% pivot_wider(names_from = type, values_from = `2018`)
+country_wide_group = country_wide %>% group_by(country)
+
+dumbbell_chart(
+  data = CW,
+  x = country,
+  y1 = Exports_2018,
+  y2 = Imports_2018,
+  top_n = 30,
+  point_colors = c("lightgray", "#494F5C")
+) +
+  labs(
+    x = NULL,
+    y = "Population",
+    title = "Europe's Largest Countries by Population in 2007"
+  ) +
+  scale_y_continuous(
+    limits = c(0, NA),
+    labels = function(x) paste(x, "Mn.")
+  )
+```
+
+Attempt at diverging bar chart needs some work
+```{r}
+CW = country_wide %>% 
+  group_by(country) %>% 
+  summarise(Imports_2018 = max(Imports, na.rm = T), Exports_2018 = max(Exports, na.rm = T))
+diverging_bar_chart(data = CW, x = country, y = Exports_2018-Imports_2018)
+```
+
+Grouped and stacked bar chart by country
+```{r}
+energy_long = energy_types %>% 
+  pivot_longer(c(`2016`, `2017`, `2018`), names_to = "year", values_to = "amount")
+
+energy_long %>% 
+  ggplot(aes(fill = type, x = year, y = amount))+ 
+  geom_bar(position="stack", stat="identity")+ 
+  facet_grid(rows = vars(country))+coord_flip()+
+  labs(x = "Country", y = "Amount", title = "By Count", fill = "")+
+  theme_classic()
+  ggplot()+geom_bar(aes(x = country, y = ))
+```
+
+Stacked bar chart by country
+```{r}
+energy_long %>% filter(type == "Nuclear") %>% 
+  filter(amount>1) %>% 
+  ggplot(aes(fill = year, x = country, y = amount))+ 
+  geom_bar(position="stack", stat="identity")+coord_flip()
+```
+
+Bar chart by country 2018
+```{r}
+country_long %>% 
+  filter(year == "2018") %>% 
+  filter(type == 	"Total net production") %>% 
+  ggplot()+geom_bar(aes(x = country, y = amount), stat = "identity")+coord_flip()
+ # scale_y_log10()
+```
+
+Final Plot with GGCharts Theme
+```{r}
+#font_add_google("Europe Underground", "Europe Underground")
+#showtext_auto()
+
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+ # scale_fill_manual(values = c("#1a2634", "#203e5f", 	"#ffcc00", "#fee5b1", "#eaeaea"))+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_ggcharts()+
+    #theme_fivethirtyeight()+
+  scale_y_discrete(breaks=NULL)+
+  #scale_x_continuous(labels = function(x) paste0(x, " GWh"), breaks = c(1838782/4,1838782/2))+
+#   geom_text(aes(label=.y))+
+  theme(plot.title = element_text(hjust = 0.5))+
+#  theme(legend.text = element_text(family = "Europe Underground", size = 10))+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% arrange(desc(Total))
+```
+
+Final Plot five38 theme
+```{r}
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+  scale_fill_brewer(palette = "Dark2")+
+  #theme_ggcharts()+
+    theme_fivethirtyeight()+
+  scale_y_discrete(breaks=NULL)+
+  scale_x_continuous(labels = function(x) paste0(x/1000, "K GWh"), breaks = c(1838782/4,1838782/2))+
+#   geom_text(aes(label=.y))+
+  theme(plot.title = element_text(hjust = 0.5))+
+#  theme(legend.text = element_text(family = "Europe Underground", size = 10))+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+```
+Final plot with hermit theme
+```{r}
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_hermit()+
+    #theme_fivethirtyeight()+
+  scale_y_discrete(breaks=NULL)+
+  scale_x_continuous(breaks=NULL)+
+  #scale_x_continuous(labels = function(x) paste0(x/1000, "k GWh"), breaks = c(1838782/4,1838782/2))+
+#   geom_text(aes(label=.y))+
+  theme(plot.title = element_text(hjust = 0.5, size = 26))+
+#  theme(legend.text = element_text(family = "Europe Underground", size = 10))+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+```
+
+final plot with wsj theme
+```{r}
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_wsj()+
+    #theme_fivethirtyeight()+
+  scale_y_discrete(breaks=NULL)+
+  #scale_x_continuous(labels = function(x) paste0(x, " GWh"), breaks = c(1838782/4,1838782/2))+
+#   geom_text(aes(label=.y))+
+  theme(plot.title = element_text(hjust = 0.5))+
+#  theme(legend.text = element_text(family = "Europe Underground", size = 10))+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+```
+
+```{r}
+energy_long %>% group_by(year, type) %>% 
+  summarise(Total = sum(amount)) %>% 
+  mutate(type = as.factor(type)) %>% 
+  mutate(type = fct_reorder(type, Total, .desc = F)) %>% 
+  ggplot()+geom_bar(aes(y = type, x = Total, fill = type), 
+                    stat = "identity")+facet_wrap(~year)+
+  coord_polar()+
+  labs(x = NULL, y = NULL, title = "How Europeans Get Their Energy",
+       fill = NULL, caption = "Graphic: @danielpballer | Data: Eurostat")+
+  scale_fill_brewer(palette = "Dark2")+
+  theme_nightblue()+
+    #theme_fivethirtyeight()+
+  scale_y_discrete(breaks=NULL)+
+  #scale_x_continuous(labels = function(x) paste0(x, " GWh"), breaks = c(1838782/4,1838782/2))+
+#   geom_text(aes(label=.y))+
+  theme(plot.title = element_text(hjust = 0.5))+
+#  theme(legend.text = element_text(family = "Europe Underground", size = 10))+
+  guides(fill = guide_legend(nrow = 1, reverse = TRUE))+
+  theme(legend.position = "bottom",
+        legend.text = element_text(margin = margin(r = .8, unit = 'cm')),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()
+        )
+```
+
