@@ -2,6 +2,7 @@
 Tidy Tuesday Plots and Code
 
 ## Week 32 European Energy 
+<a href='Scripts_for_final_plots/Week_32_European_Energy_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_32_European_Energy_Types.jpg" align="center"/></a>
 ![](https://github.com/danielpballer/Tidy_Tuesday/blob/master/Final_Plots/Week_32_European_Energy_Types.jpg)
 
 ## Week 29 Astronauts
