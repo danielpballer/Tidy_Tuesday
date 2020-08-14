@@ -151,3 +151,55 @@ anim_save("anim1.gif")
 ?view_follow
 ```
 
+Creating a 2nd final plot of the top 10 characters.
+```{r}
+no_scene<-dplyr::bind_cols(no_scene,data.frame(emotions))
+no_scene %>% 
+  mutate(character = gsub("Actor ", "", character)) %>% 
+  mutate(character = gsub("Actress ", "", character)) %>% 
+  group_by(character) %>%
+  count() %>%
+  #arrange(desc(n)) %>% as.data.frame()
+  filter(n>100) %>% 
+  select(character)->top_char2
+```
+
+```{r}
+anim2 = no_scene %>% 
+  filter(character %in% top_char2$character)%>%
+  group_by(character) %>% 
+  summarise(Anger = sum(anger), Anticipation = sum(anticipation), Disgust = sum(disgust), Fear = sum(fear), Joy = sum(joy), Sadness = sum(sadness), Surprise = sum(surprise), Trust = sum(trust)) %>% 
+  pivot_longer(-character, names_to = "emotions", values_to = "total") %>%
+  mutate(emotions = fct_rev(emotions)) %>% 
+  group_by(character) %>% 
+  ggplot()+geom_bar(aes(x = total, y = as.factor(emotions),
+                        fill = as.factor(emotions)), stat = "identity")+
+  transition_states(character,
+                    transition_length = 10,
+                    state_length = 1)+
+    ease_aes('cubic-in-out') +
+  scale_fill_avatar(palette = "FireNation", 8, type = "discrete",
+  reverse = FALSE)+
+  labs(title = "How do you feel?", 
+       subtitle = "Emotions expressed by {closest_state}", 
+       fill = "Emotions", 
+       x = "Count", 
+       y = "Emotions", 
+       caption = "Graphic: @danielpballer | Data: Avery Robbins")+
+  theme_avatar(title.font = "Slayer", text.font = "Slayer",
+               title.size = 20, subtitle.size = 14, axis.text.size = 12,
+               legend.title.size = 8, axis.title.size = 12, 
+               legend.text.size = 8)+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption = element_text(size = 10))+
+  guides(fill = guide_legend(reverse = TRUE))
+
+
+animate(anim2, 
+        duration = 30, 
+        fps  =  7)
+
+anim_save("anim2.gif")
+```
+
