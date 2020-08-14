@@ -1,0 +1,153 @@
+---
+title: "Week_33_Avatar_Exploration"
+author: "MAJ Daniel Baller"
+date: "8/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r Loading Packages}
+library(tidyverse)
+library(tm)
+library(syuzhet)
+library(ggTimeSeries)
+library(scales)
+library(gganimate)
+library(tvthemes)
+library(forcats)
+library(extrafont)
+```
+
+```{r Reading in Data}
+avatar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/avatar.csv')
+scene_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/scene_description.csv')
+```
+
+```{r Saving Data}
+write_csv(avatar, "avatar.csv")
+write_csv(scene_description, "scene_description.csv")
+```
+
+```{r}
+no_scene = avatar %>% 
+  filter(character!="Scene Description") %>% 
+  mutate(full_text = gsub("\\[.*?\\]", "", full_text))
+  
+dataCorpus <- Corpus(VectorSource(no_scene$full_text))
+dataCorpus <- tm_map(dataCorpus, content_transformer(tolower))
+dataCorpus <- tm_map(dataCorpus, removePunctuation)
+dataCorpus <- tm_map(dataCorpus, removeWords, stopwords('english'))
+#dataCorpus <- tm_map(dataCorpus, removeWords, c("etc"))
+dataCorpus<-tm_map(dataCorpus,stripWhitespace)
+inspect(dataCorpus[1:10])
+```
+
+Getting sentiment scores and emotions using the nrc lexicon.  
+```{r}
+#Sentiment by emotions
+emotions<-get_nrc_sentiment(dataCorpus$content)
+#Sentiment positive-negative
+sent_no_scene<-get_sentiment(dataCorpus$content,method = "nrc")
+#normalizing sentiment score
+sent_no_scene_norm<-((sent_no_scene-mean(sent_no_scene))/(max(sent_no_scene)-min(sent_no_scene)))
+#Bind sentiment scores to original dataset
+no_scene_w<-dplyr::bind_cols(no_scene,data.frame(sent_no_scene))
+no_scene_w<-dplyr::bind_cols(no_scene_w,data.frame(sent_no_scene_norm))
+?scale
+```
+
+```{r}
+no_scene_w %>% 
+  group_by(book_num, chapter_num) %>% 
+  summarise(chpt_avg = mean(sent_no_scene_norm)) %>% 
+  arrange(book_num) %>% 
+  ggplot(aes(x = chapter_num, y = chpt_avg, group = as.factor(book_num), fill = as.factor(book_num))) +
+  stat_steamgraph()
+```
+
+```{r}
+no_scene_w %>% 
+  filter(book_num==1) %>% 
+  ggplot(aes(x = id, y = sent_no_scene_norm, group = as.factor(character), color = as.factor(character))) +
+  geom_path()+
+  theme(legend.position = "none")
+```
+
+```{r}
+no_scene_w<-dplyr::bind_cols(no_scene_w,data.frame(emotions))
+no_scene_w %>% 
+  mutate(character = gsub("Actor ", "", character)) %>% 
+  mutate(character = gsub("Actress ", "", character)) %>% 
+  group_by(character) %>%
+  count() %>% 
+  filter(n>10) %>% 
+  select(character)->top_char
+
+no_scene_w %>% 
+  filter(character %in% top_char$character)%>%
+  group_by(character, book_num) %>% 
+  summarise(character_avg = mean(sent_no_scene)) %>% 
+  ggplot(aes(x = character, y = character_avg)) +
+  geom_bar(stat = "identity")+coord_flip()+facet_wrap(~book_num)
+
+no_scene_w %>% count(sent_no_scene_norm>0)
+```
+
+```{r}
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+?font_import
+fonts()
+fonttable()
+loadfonts()
+import_avatar()
+
+loadfonts(quiet = TRUE)
+
+anim = no_scene_w %>% 
+  filter(character %in% top_char$character)%>%
+  group_by(character) %>% 
+  summarise(Anger = sum(anger), Anticipation = sum(anticipation), Disgust = sum(disgust), Fear = sum(fear), Joy = sum(joy), Sadness = sum(sadness), Surprise = sum(surprise), Trust = sum(trust)) %>% 
+  pivot_longer(-character, names_to = "emotions", values_to = "total") %>%
+  mutate(emotions = fct_rev(emotions)) %>% 
+  group_by(character) %>% 
+  ggplot()+geom_bar(aes(x = total, y = as.factor(emotions),
+                        fill = as.factor(emotions)), stat = "identity")+
+  transition_states(character,
+                    transition_length = 10,
+                    state_length = 1)+
+    ease_aes('cubic-in-out') +
+  scale_fill_avatar(palette = "FireNation", 8, type = "discrete",
+  reverse = FALSE)+
+  labs(title = "How do you feel?", 
+       subtitle = "Emotions expressed by {closest_state}", 
+       fill = "Emotions", 
+       x = "Count", 
+       y = "Emotions", 
+       caption = "Graphic: @danielpballer | Data: Avery Robbins")+
+  theme_avatar(title.font = "Slayer", text.font = "Slayer",
+               title.size = 20, subtitle.size = 14, axis.text.size = 12,
+               legend.title.size = 8, axis.title.size = 12, 
+               legend.text.size = 8)+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption = element_text(size = 10))+
+  guides(fill = guide_legend(reverse = TRUE))
+
+
+
+animate(anim, 
+        duration = 60, 
+        fps  =  1)
+
+anim_save("anim1.gif")
+
+?view_follow
+```
+
