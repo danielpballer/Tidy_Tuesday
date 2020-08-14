@@ -2,7 +2,11 @@
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
 ## Week 33 Avatar: The Last Airbender
+Top 82 characters with at least 10 pieces of dialogue.
 <a href='Scripts_for_final_plots/Week_33_Avatar_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_33_Avatar.gif" align="center"/></a>
+
+Top 10 characters with at least 100 pieces of dialogue.
+<a href='Scripts_for_final_plots/Week_33_Avatar_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_33_Avatar2.gif" align="center"/></a>
 
 ## Week 32 European Energy 
 <a href='Scripts_for_final_plots/Week_32_European_Energy_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_32_European_Energy_Types.jpg" align="center"/></a>
