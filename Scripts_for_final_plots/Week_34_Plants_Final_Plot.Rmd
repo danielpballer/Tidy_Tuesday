@@ -1,0 +1,63 @@
+---
+title: "Week_34_Plants_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "8/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(ggpomological)
+library(extrafont)
+```
+
+```{r reading in data}
+threats <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-18/threats.csv')
+```
+
+Loading fonts
+```{r}
+# Loading fonts
+font_import()
+loadfonts(device = "win")
+fonts()
+```
+
+Creating the final plot
+```{r}
+# Final Plot
+threats %>% 
+  mutate(year_last_seen = factor(year_last_seen, levels = c("2000-2020","1980-1999","1960-1979","1940-1959","1920 - 1939","1900-1919","Before 1900"))) %>% 
+  mutate(continent = factor(continent, levels = c("Africa","Asia","Oceania","North America","South America","Europe"))) %>% 
+  filter(year_last_seen!="NA") %>% 
+  group_by(year_last_seen, continent) %>% 
+  count(continent, threat_type, threatened, year_last_seen) %>% 
+  filter(threatened==1) %>% 
+  ggplot(aes(x = year_last_seen, y = n, fill = threat_type))+
+  geom_bar(stat = "identity", position = "fill")+
+ facet_wrap(~continent)+
+  labs(x = NULL, y = NULL, fill = "Type of Threat", 
+       title = "What's Threatening Our Plants?",
+       subtitle = "Known threats to plants that were last seen in each 20 year block", 
+       caption = "Graphic: @danielpballer | Data: (IUCN) Red list of Threatened Species")+
+  scale_fill_manual(values = c("#c03728", "#919c4c", "#fd8f24", "#f5c04a", "#e68c7c", "#828585", "#c3c377", "#4f5157", "#6f5438", "#a89985", "#efe1c6","#f8eed1"))+
+  scale_y_continuous(breaks = NULL) +
+  coord_flip()+
+  theme_pomological(axis.text.size = 10)+
+  theme()+
+  theme(plot.title = element_text(hjust = 0.5, size = 26),
+        plot.subtitle = element_text(hjust = .5, size = 18),
+        text = element_text(family = "Sylfaen", size = 10),
+        legend.text = element_text(size = 14),
+        strip.text.x = element_text(size = 14),
+        legend.title = element_text(size = 16),
+        plot.margin=unit(c(.5,1.5,.5,1),"cm"))
+```
