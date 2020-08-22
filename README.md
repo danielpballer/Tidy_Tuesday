@@ -1,6 +1,9 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+## Week 34 Extinct Plants
+<a href='Scripts_for_final_plots/Week_34_Plants_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_34_Plants.png" align="center"/></a>
+
 ## Week 33 Avatar: The Last Airbender
 Top 82 characters with at least 10 pieces of dialogue.
 
