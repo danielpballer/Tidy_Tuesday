@@ -1,6 +1,9 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+## Week 35 Chopped
+<a href='Scripts_for_final_plots/Week_35_Chopped_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_35_Chopped.png" align="center"/></a>
+
 ## Week 34 Extinct Plants
 <a href='Scripts_for_final_plots/Week_34_Plants_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_34_Plants.png" align="center"/></a>
 
