@@ -1,0 +1,67 @@
+---
+title: "Week_35_Chopped_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "8/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading in data}
+library(tidyverse)
+library(ggdark)
+library(ggdist)
+library(extrafont)
+```
+
+```{r reading in data}
+chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+```
+
+Loading fonts
+```{r}
+# Loading fonts
+font_import()
+loadfonts(device = "win")
+fonts()
+```
+
+Final Plot
+```{r}
+#Calculating the average rating for all episodes
+avg_rating = mean(chopped$episode_rating, na.rm = T)
+
+#Final Plot
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%
+  ggplot(aes(x = episode_rating, y = year, color = year, 
+             fill = year))+
+  geom_vline(xintercept = mean(chopped$episode_rating, na.rm = T), color = "red")+
+  stat_dots(position = "dodge", dotsize = .4)+
+  annotate(
+    "text", x = 7, y = 12, size = 2.8, color = "#f2f1f3", lineheight = .9,
+    label = glue::glue("Average Episode Rating: {round(avg_rating, 1)}")) +
+  geom_curve(aes(x = 7, y = 12.1, xend = 8.3, yend = 12.8),
+    arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+    color = "#f2f1f3", curvature = -0.25
+    )+
+  annotate(
+    "text", x = 6.1, y = 7, size = 2.8, color = "#f2f1f3", lineheight = .9,
+    label = "Lowest episode rateing of 5.5 \nWorst Cooks Chalenge"
+    ) +
+  geom_curve(aes(x = 6.5, y = 7.2, xend = 5.6, yend = 8.1),
+    arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+    color = "#f2f1f3", curvature = 0.35)+
+  labs(x = "IMDB Rating", y = "Year Episode Aired", 
+       title = "Chopped Episode Ratings",
+       subtitle = " ", fill = "Year", color = "Year",
+       caption = "Graphic: @danielpballer | Data: Jeffrey Braun")+
+  dark_theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+       # legend.position = "none",
+        text = element_text(family = "Impact"))+
+  guides(fill = guide_legend(reverse = TRUE), 
+         color = guide_legend(reverse = TRUE))
+```
+

@@ -1,0 +1,167 @@
+---
+title: "Tidy_Tuesday_Week35_Chopped_Exploration"
+author: "MAJ Daniel Baller"
+date: "8/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r loading in data}
+library(tidyverse)
+library(hrbrthemes)
+library(plotly)
+library(ggTimeSeries)
+library(ggdark)
+library(RColorBrewer)
+library(ggdist)
+library(patchwork)
+library(extrafont)
+```
+
+```{r reading in data}
+chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+```
+
+```{r Saving Data}
+write_csv(chopped, "week35_chopped.csv")
+```
+
+Trying out plotly
+```{r}
+t = chopped %>% 
+  ggplot(aes(x = season_episode, y = season, fill = episode_rating))+
+  geom_raster()+
+  theme_minimal()
+ggplotly(t)
+
+?geom_tile
+```
+
+tile plot.  
+```{r}
+chopped %>% 
+  ggplot(aes(x = season_episode, y = season, fill = episode_rating))+
+  geom_raster(na.rm = T)+
+  theme_minimal()
+```
+
+Plotting rating for top judging combos
+```{r}
+chopped %>% count(judge1, judge2, judge3) %>% as.data.frame() %>% arrange(desc(n)) %>% 
+  top_n(24) %>% select(-n) ->top_judge_teams
+
+chopped_top_teams = inner_join(top_judge_teams, chopped)
+
+chopped_top_teams %>% 
+  group_by(judge1, judge2, judge3) %>% 
+  summarise(avg_rating = mean(episode_rating, na.rm = T)) %>% 
+  mutate(judges = str_c(judge1, judge2, judge3, sep = ", ")) %>% 
+  ggplot(aes(x = judges, y = avg_rating))+geom_bar(stat = "identity")+
+  coord_flip()
+
+chopped %>% pivot_longer(c(judge1, judge2, judge3), values_to = "judge", names_to = "judge_num") %>% count(judge) %>% arrange(desc(n)) %>% as.data.frame() %>% top_n(19) %>% select(judge) %>% pull() -> top_judges
+```
+
+Episode ratings over all episodes
+```{r}
+chopped %>% ggplot(aes(x = series_episode,y = episode_rating))+geom_point()+
+  geom_smooth(method = "gam")
+
+```
+
+Tile Plot of episode ratings by year
+```{r}
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%count(year)
+
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%
+  group_by(year) %>% 
+  mutate(year_num = row_number()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year_num, y = year, fill = episode_rating))+
+  geom_tile(na.rm = T)+
+  scale_fill_gradient(
+    low = "#16bffd",
+    high = "#cb3066",
+    space = "Lab",
+    na.value = "#000000",
+    guide = "colourbar",
+    aesthetics = "fill")+
+  annotate(
+    "text", x = 63, y = 11, size = 2.8, color = "#f2f1f3", lineheight = .9,
+    label = "67 Episodes \nin 2016") +
+  geom_curve(aes(x = 60, y = 10.7, xend = 67.5, yend = 8.6),
+    arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+    color = "#f2f1f3", curvature = -0.25)+
+  dark_theme_classic()
+```
+
+Line plot of ratings by year
+```{r}
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%
+  group_by(year) %>% 
+  mutate(year_num = row_number()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year_num, y = episode_rating, color = year))+geom_line()
+```
+
+Barplot of average rating per year
+```{r}
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%
+  group_by(year) %>% 
+  summarise("Avg Rating" = mean(episode_rating, na.rm = T)) %>% 
+  ggplot(aes(x = `Avg Rating`, y = year))+geom_bar(stat = "identity")+
+  dark_theme_classic()
+```
+
+Loading fonts
+```{r}
+# Loading fonts
+font_import()
+loadfonts(device = "win")
+fonts()
+```
+
+Final Plot
+```{r}
+#Calculating the average rating for all episodes
+avg_rating = mean(chopped$episode_rating, na.rm = T)
+
+#Final Plot
+chopped %>% mutate(year = str_sub(air_date, -4, -1)) %>%
+  ggplot(aes(x = episode_rating, y = year, color = year, 
+             fill = year))+
+  geom_vline(xintercept = mean(chopped$episode_rating, na.rm = T), color = "red")+
+  stat_dots(position = "dodge", dotsize = .4)+
+  annotate(
+    "text", x = 7, y = 12, size = 2.8, color = "#f2f1f3", lineheight = .9,
+    label = glue::glue("Average Episode Rating: {round(avg_rating, 1)}")) +
+  geom_curve(aes(x = 7, y = 12.1, xend = 8.3, yend = 12.8),
+    arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+    color = "#f2f1f3", curvature = -0.25
+    )+
+  annotate(
+    "text", x = 6.1, y = 7, size = 2.8, color = "#f2f1f3", lineheight = .9,
+    label = "Lowest episode rateing of 5.5 \nWorst Cooks Chalenge"
+    ) +
+  geom_curve(aes(x = 6.5, y = 7.2, xend = 5.6, yend = 8.1),
+    arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+    color = "#f2f1f3", curvature = 0.35)+
+  labs(x = "IMDB Rating", y = "Year Episode Aired", 
+       title = "Chopped Episode Ratings",
+       subtitle = " ", fill = "Year", color = "Year",
+       caption = "Graphic: @danielpballer | Data: Jeffrey Braun")+
+  dark_theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+       # legend.position = "none",
+        text = element_text(family = "Impact"))+
+  guides(fill = guide_legend(reverse = TRUE), 
+         color = guide_legend(reverse = TRUE))
+```
+
