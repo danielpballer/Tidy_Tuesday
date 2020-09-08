@@ -2,7 +2,7 @@
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
 ## Week 36 Global Crop Yields
-<a href='Scripts_for_final_plots/Week_36_Global_Crop_Yields.Rmd' target='_blank'><img src="Final_Plots/Week_36_Crops.png" align="center"/></a>
+<a href='Scripts_for_final_plots/Week_36_Global_Crop_Yields_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_36_Crops.png" align="center"/></a>
 
 ## Week 35 Chopped
 <a href='Scripts_for_final_plots/Week_35_Chopped_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_35_Chopped.png" align="center"/></a>
