@@ -1,0 +1,48 @@
+---
+title: "Week36_Global_Crop_Yields_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "9/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(geofacet)
+library(ggthemes)
+```
+
+```{r reading in data}
+key_crop_yields <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/key_crop_yields.csv')
+```
+
+Pivoting to long data
+```{r}
+long_crops <- key_crop_yields %>% 
+  pivot_longer(cols = 4:last_col(),
+               names_to = "crop", 
+               values_to = "crop_production") %>% 
+  mutate(crop = str_remove_all(crop, " \\(tonnes per hectare\\)")) %>% 
+  set_names(nm = names(.) %>% tolower())
+```
+
+Creating and saving the final plot.
+```{r}
+crop = long_crops %>% filter(is.na(code)==F) %>% 
+  ggplot(aes(x = year, y = crop_production, color = crop)) +
+    geom_path() +
+    facet_geo(~ entity, grid = "eu_grid1", scales = "free_y") +
+    labs(x = "Year", title = "Who's growing what? How crop yields in Europe have changed from 1960-2020", color = "Crop", 
+         subtitle = "Over the last 60 years, potatoes are the top yielding crop in most of Europe.",
+         caption = "Tidy Tuesday Week 36 | Graphic: @danielpballer | Data: Our World in Data")+
+    ylab("Tonnes Per Hectare")+
+    theme_hc()+
+    guides(color = guide_legend(nrow = 1))+
+    theme(plot.title = element_text(hjust = 0.5, size = 18),
+          plot.subtitle = element_text(hjust = 0.5))
+
+ggsave(filename="Week36 Crops.png", plot=crop, device="png", height=8.5, width=11, units="in", dpi=800)
+```

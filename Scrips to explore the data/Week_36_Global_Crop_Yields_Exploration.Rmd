@@ -1,0 +1,78 @@
+---
+title: "Week36_Global_Crop_Yields_Exploration"
+author: "MAJ Daniel Baller"
+date: "8/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(geofacet)
+library(hrbrthemes)
+library(ggthemes)
+library(RColorBrewer)
+library(bbplot)
+```
+
+```{r reading in data}
+key_crop_yields <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/key_crop_yields.csv')
+fertilizer <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/cereal_crop_yield_vs_fertilizer_application.csv')
+tractors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/cereal_yields_vs_tractor_inputs_in_agriculture.csv')
+land_use <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/land_use_vs_yield_change_in_cereal_production.csv')
+arable_land <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/arable_land_pin.csv')
+```
+
+```{r Saving Data}
+write_csv(arable_land, "week36_arable_land.csv")
+write_csv(fertilizer, "week36_fertilizer.csv")
+write_csv(key_crop_yields, "week36_key_crop_yields.csv")
+write_csv(land_use, "week36_land_use.csv")
+write_csv(tractors, "week36_tractors.csv")
+```
+
+```{r}
+key_crop_yields %>% filter(is.na(Code)==F) %>% count(Entity)
+```
+
+Pivoting to long data
+```{r}
+long_crops <- key_crop_yields %>% 
+  pivot_longer(cols = 4:last_col(),
+               names_to = "crop", 
+               values_to = "crop_production") %>% 
+  mutate(crop = str_remove_all(crop, " \\(tonnes per hectare\\)")) %>% 
+  set_names(nm = names(.) %>% tolower())
+```
+
+```{r}
+long_crops %>% filter(is.na(code)==F) %>% 
+  ggplot(aes(x = year, y = crop_production, color = crop)) +
+    geom_path() +
+    facet_geo(~ entity, grid = "eu_grid1", scales = "free_y") 
+
+  
+
+my_grid <- eu_grid2
+
+crop = long_crops %>% filter(is.na(code)==F) %>% 
+  ggplot(aes(x = year, y = crop_production, color = crop)) +
+    geom_path() +
+    facet_geo(~ entity, grid = "eu_grid1", scales = "free_y") +
+    labs(x = "Year", title = "Who's growing what? How crop yields in Europe have changed from 1960-2020", color = "Crop", 
+         subtitle = "Over the last 60 years potatoes are the top yielding crop in most of Europe.",
+         caption = "Tidy Tuesday Week 36 | Graphic: @danielpballer | Data: Our World in Data")+
+    ylab("Tonnes Per Hectare")+
+    #guide_legend(nrow = "1")+
+    #scale_color_brewer(palette = "RdYlGn")+
+    theme_hc()+
+    guides(color = guide_legend(nrow = 1))+
+    theme(plot.title = element_text(hjust = 0.5, size = 18),
+          plot.subtitle = element_text(hjust = 0.5))
+
+ggsave(filename="Week36 Crops.png", plot=crop, device="png", height=8.5, width=11, units="in", dpi=800)
+```
+
