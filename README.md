@@ -1,6 +1,9 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+## Week 37 Friends
+<a href='Scripts_for_final_plots/Week_37_Friends_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_37_Friends.png" align="center"/></a>
+
 ## Week 36 Global Crop Yields
 <a href='Scripts_for_final_plots/Week_36_Global_Crop_Yields_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_36_Crops.png" align="center"/></a>
 
