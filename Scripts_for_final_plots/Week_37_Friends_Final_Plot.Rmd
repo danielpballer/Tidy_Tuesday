@@ -51,7 +51,7 @@ friends_info %>%
       scale_fill_viridis_b()+
       labs(x = "Episode Series Number", y = "TV Viewership in Millions", 
       color = "Season", fill = "IMDB Rating", title = "F R I E N D S", 
-      subtitle = "Colored bars represent the median viewership by season. \n Points colored by IMDB Rating",
+      subtitle = "Colored bars represent the median viewership by season. \n Episodes colored by IMDB Rating",
       caption = "Tidy Tuesday Week 37 | Graphic: @danielpballer | Data: (friends) by Emil Hvitfeldt")+
       annotate("text", x = 75, y = 47, size = 3, color = "white", lineheight = .9,
                label = "The One After the Superbowl: \n2 episode special following the 1996 Super Bowl") +
