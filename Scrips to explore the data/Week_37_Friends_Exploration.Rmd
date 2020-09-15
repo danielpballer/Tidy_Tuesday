@@ -1,0 +1,95 @@
+---
+title: "Tidy_Tuesday_Week37_Friends_Exploration"
+author: "MAJ Daniel Baller"
+date: "9/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+
+```{r loading packages}
+library(tidyverse)
+library(ggdark)
+library(extrafont)
+library(ggthemes)
+library(ggthemr)
+library(hrbrthemes)
+```
+
+```{r reading in data}
+friends <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-08/friends.csv')
+friends_emotions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-08/friends_emotions.csv')
+friends_info <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-08/friends_info.csv')
+```
+
+```{r}
+write_csv(friends, "friends.csv")
+write_csv(friends_emotions, "friends_emotions.csv")
+write_csv(friends_info, "friends_info.csv")
+```
+
+Loading fonts
+```{r}
+# Loading fonts
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+loadfonts()
+loadfonts(device = "win")
+fonts()
+```
+
+
+```{r}
+friends_info %>% 
+  group_by(season) %>%
+  mutate(median_viewership = median(us_views_millions)) %>% 
+  ungroup() %>% 
+  mutate(series_num = row_number()) %>% 
+  ggplot()+
+      geom_line(aes(x = series_num, y = median_viewership, group = as.factor(season), 
+      color = as.factor(season)),size = 2) + 
+      geom_segment(aes(x = series_num, y = median_viewership, 
+                       xend = series_num, yend = us_views_millions), 
+                   color = "grey50", size = .1)+
+      geom_point(aes(x = series_num, y = us_views_millions, 
+                 fill = imdb_rating), shape = 21, size = 2)+
+      scale_color_brewer(palette = "RdYlGn")+
+      scale_fill_viridis_b()+
+      labs(x = "Episode Series Number", y = "TV Viewership in Millions", 
+      color = "Season", fill = "IMDB Rating", title = "F R I E N D S", 
+      subtitle = "Colored bars represent the median viewership by season. \n Points colored by IMDB Rating",
+      caption = "Tidy Tuesday Week 37 | Graphic: @danielpballer | Data: (friends) by Emil Hvitfeldt")+
+      annotate("text", x = 75, y = 47, size = 3, color = "white", lineheight = .9,
+               label = "The One After the Superbowl: \n2 episode special following the 1996 Super Bowl") +
+      geom_curve(aes(x = 75, y = 48, xend = 40, yend = 53),
+                 arrow = arrow(length = unit(0.07, "inch")), size = 0.5,
+                 color = "white", curvature = 0.35)+
+      annotate("text", x = 200, y = 47, size = 3, color = "white", lineheight = .9,
+               label = "The Last One: \n2 episode Series Finale") +
+      geom_curve(aes(x = 200, y = 48, xend = 234, yend = 52.5),
+                 arrow = arrow(length = unit(0.07, "inch")), size = 0.5,
+                 color = "white", curvature = -0.35)+
+      annotate("text", x = 190, y = 19, size = 3, color = "white", lineheight = .9,
+               label = "The One with the Vows: \nLowest rated and least \nwatched episode") +
+      geom_curve(aes(x = 190, y = 17.5, xend = 169, yend = 15.5),
+                 arrow = arrow(length = unit(0.07, "inch")), size = 0.5,
+                 color = "white", curvature = -0.3)+
+      dark_theme_classic()+
+      theme(text=element_text(family = "Gabriel Weiss' Friends Font"),
+            title = element_text(size = 21),
+            plot.title = element_text(size = 35, hjust = 0.5),
+            plot.subtitle = element_text(size = 12, hjust = 0.5),
+            plot.caption = element_text(size = 8, hjust = 1))
+
+friends_info %>% filter(us_views_millions>40) %>% select(title)
+friends_info %>% filter(us_views_millions<18) %>% select(title)
+friends_info %>% filter(us_views_millions<18)
+```
+
+
