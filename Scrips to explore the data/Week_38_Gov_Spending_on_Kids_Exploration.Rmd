@@ -1,0 +1,194 @@
+---
+title: "Week_38_Gov_Spending_on_Kids_Exploration"
+author: "MAJ Daniel Baller"
+date: "9/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(directlabels)
+library(gghighlight)
+library(ggthemr)
+library(grid)
+library(png)
+library(jpeg)
+library(cowplot)
+library(sf)
+library(usmap)
+library(ggdark)
+library(extrafont)
+library(RColorBrewer)
+```
+
+```{r reading in data}
+kids <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-15/kids.csv')
+```
+
+```{r saving the data}
+write_csv(kids, "week38_Kids.csv")
+```
+
+K-12 Ed
+```{r}
+
+imgage <- readJPEG("blackboard.jpg")
+imgage <- readPNG("blackboard.PNG")
+
+
+a = kids %>% filter(variable=="PK12ed") %>% 
+  ggplot(aes(x = year, y = inf_adj_perchild, color = state)) + 
+  geom_path()+
+ #scale_colour_discrete(guide = 'none') +
+  #scale_x_discrete(lims(1995, 2025)) +
+  gghighlight(state=="New York"|state=="Oregon"|state=="Texas"|state=="Arizona"| state=="Georgia"|state=="California")+
+  #geom_dl(aes(label = state), method = list("last.points"), cex = 0.8) +
+  labs(title = "Who's paying for early education")+
+  theme_minimal_hgrid()
+
+ggdraw()+
+  draw_image(imgage, scale = 1.5)+
+  draw_plot(a)
+
+```
+
+Librarys
+```{r}
+kids %>% filter(variable=="lib") %>% 
+  ggplot(aes(x = year, y = inf_adj_perchild, color = state)) + geom_path()+
+  scale_colour_discrete(guide = 'none') +
+  #scale_x_discrete(lims(1995, 2025)) +
+  gghighlight(state=="New York"|state=="Oregon"|state=="Texas"|state=="Arizona"| state=="Georgia"|state=="California")+
+  geom_dl(aes(label = state), method = list("last.points"), cex = 0.8) +
+  theme_classic()
+```
+
+higher
+```{r}
+kids %>% filter(variable=="highered") %>% 
+  ggplot(aes(x = year, y = inf_adj_perchild, color = state)) + geom_path()+
+  scale_colour_discrete(guide = 'none') +
+  #scale_x_discrete(lims(1995, 2025)) +
+  gghighlight(state=="New York"|state=="Oregon"|state=="Texas"|state=="Arizona"| state=="Georgia"|state=="California")+
+  geom_dl(aes(label = state), method = list("last.points"), cex = 0.8) +
+  theme_classic()
+```
+
+Parks and Rec
+```{r}
+ggthemr("chalk")
+kids %>% filter(variable=="parkrec") %>% 
+  ggplot(aes(x = year, y = inf_adj_perchild, color = state)) + geom_path()+
+  #scale_colour_discrete(guide = 'none') +
+  #scale_x_discrete(lims(1995, 2025)) +
+  gghighlight(state=="New York"|state=="Oregon"|state=="Texas"|state=="Arizona"| state=="Georgia"|state=="California")+
+  geom_dl(aes(label = state), method = list("last.points"), cex = 0.8) +
+  theme_classic()
+
+ggthemr_reset()
+
+```
+
+Attempt to show all 4
+```{r}
+kids %>% filter(variable=="parkrec"|variable=="PK12ed"|variable=="lib"|
+                  variable=="highered") %>% 
+  ggplot(aes(x = year, y = inf_adj_perchild, color = state)) + geom_path()+
+  #scale_colour_discrete(guide = 'none') +
+  #scale_x_discrete(lims(1995, 2025)) +
+  gghighlight(state=="New York"|state=="Oregon"|state=="Texas"|state=="Arizona"| state=="Georgia"|state=="California")+
+  geom_dl(aes(label = state), method = list("last.points"), cex = 0.8) +
+  facet_wrap(~variable)+
+  theme_classic()
+```
+
+First Map Plot
+```{r}
+plot_usmap(regions = "states", 
+           data = kids %>% filter(variable == "PK12ed") %>% filter(year == 2016),
+           values = "inf_adj_perchild", color = "black") + 
+  #scale_fill_continuous(name = "Public spending \non elementary and \nsecondary education \n($1,000s)") + 
+  scale_fill_gradient2(low = "red", mid = "yellow", midpoint = 10, high = "dark green", na.value = NA, name = "Public spending \non elementary and \nsecondary education \n($1,000s)")+
+  labs(title = "US Public Spending on Elementary and Secondary Education by State")+
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5, size = 26))
+```
+
+Faceted map plots
+```{r}
+kids2 = kids %>% filter(variable=="PK12ed"|variable=="highered"|variable=="lib"|
+                          variable=="parkrec")
+
+plot_usmap(regions = "states", 
+           data = kids2 %>% filter(year == 2016),
+           values = "inf_adj_perchild", color = "black") + 
+  scale_fill_gradient(low = "yellow", high = "dark green", na.value = NA, name = "Public spending \non elementary and \nsecondary education \n($1,000s)")+
+  labs(title = "US Public Spending on Elementary and Secondary Education by State",
+       subtitle = " ")+
+  facet_wrap(~variable)+
+  #theme_void()+
+  dark_theme_void()+
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5, size = 18))
+```
+
+Loading fonts
+```{r}
+# Loading fonts
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+loadfonts(device = "win")
+fonts()
+```
+
+First version of final plot
+```{r}
+plot_usmap(regions = "states", 
+           data = kids %>% filter(variable=="highered") %>% filter(year == 2016),
+           values = "inf_adj_perchild", color = "black") + 
+  scale_fill_distiller(palette = "RdYlGn", direction = 1, name = "Public spending \nin $1,000s per child")+
+  labs(title = "US Public Spending on Higher Education by State",
+       subtitle = "Wyoming is the highest at $4.04K per child while Washington DC is the lowest at $0.806K per child",
+       caption = "Tidy Tuesday Week 38 | Graphic: @danielpballer | Data: Urban Institute")+
+  dark_theme_void()+
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5, size = 36, 
+                                  family = "whatever it takes", face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 18, 
+                                     family = "whatever it takes", face = "bold"), 
+        text = element_text(family = "whatever it takes", face = "bold", size = 12),
+        plot.caption = element_text(size = 16))
+```
+
+Final Plot
+```{r}
+a = plot_usmap(regions = "states", 
+           data = kids %>% filter(variable=="highered") %>% filter(year == 2016),
+           values = "inf_adj_perchild", color = "black") + 
+  scale_fill_distiller(palette = "RdYlGn", direction = 1, name = "Public spending \nin $1,000s per child")+
+  labs(title = "US Public Spending on Higher Education by State",
+       subtitle = "Wyoming is the highest at $4.04K per child while Washington DC is the lowest at $0.806K per child",
+       caption = "Tidy Tuesday Week 38 | Graphic: @danielpballer | Data: Urban Institute")+
+  theme_void()+
+  #dark_theme_void()+
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5, size = 36, family = "whatever it takes", face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 18, family = "whatever it takes", face = "bold"), 
+        text = element_text(family = "whatever it takes", face = "bold", 
+                            color = "#fafae0"),
+        legend.text  = element_text(size = 14),
+        plot.caption = element_text(size = 16))
+
+#adding a background image of a blackboard
+ggdraw()+
+  draw_image(imgage, scale = 1.5)+
+  draw_plot(a)
+```
+
