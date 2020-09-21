@@ -2,7 +2,7 @@
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
 ## Week 38 Government Spending on Education
-<a href='Scripts_for_final_plots/Week_38_Gov_Spending_on_Education_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_38_Gov_Spending_on_Education.PNG" align="center"/></a>
+<a href='Scripts_for_final_plots/Week_38_Gov_Spending_on_Kids_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_38_Gov_Spending_on_Education.PNG" align="center"/></a>
 
 ## Week 37 Friends
 <a href='Scripts_for_final_plots/Week_37_Friends_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_37_Friends.PNG" align="center"/></a>
