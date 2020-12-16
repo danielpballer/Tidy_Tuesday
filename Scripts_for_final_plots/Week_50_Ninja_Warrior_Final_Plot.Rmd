@@ -1,0 +1,66 @@
+---
+title: "Week_50_Ninja_Warrior_Final_Plot"
+author: "MAJ Daniel Baller"
+date: "12/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(ggthemes)
+library(ggtext)
+library(extrafont)
+```
+
+```{r reading in data}
+ninja_warrior <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-15/ninja_warrior.csv')
+```
+
+```{r creating stats for the obstacles}
+ninja_warrior %>% group_by(obstacle_name) %>% 
+  summarise(frequency = n(), max = max(obstacle_order), min = min(obstacle_order), avg = round(mean(obstacle_order), 0))  %>% 
+  arrange(desc(frequency)) ->obs_stats
+```
+
+```{r loading fonts}
+# Loading fonts
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+loadfonts()
+loadfonts(device = "win")
+fonts()
+```
+
+```{r final plot}
+obs_stats %>% 
+  arrange(desc(frequency)) %>% 
+  slice_head(n = 17) %>% 
+  mutate(obstacle_name = glue::glue("{obstacle_name} ({frequency})")) %>% 
+  mutate(obstacle_name = fct_rev(fct_inorder(obstacle_name))) %>% 
+  ggplot(aes(y = obstacle_name))+
+  geom_segment(aes(x = min, xend = max, y = obstacle_name, yend = obstacle_name))+
+  geom_point(aes(x = min), color = "#d8282b", size = 4)+
+  geom_point(aes(x = max), color = "#284c88", size = 4)+
+  labs(
+    y = "Obstacle (Frequency)",
+    x = "Obstacle Order",
+    title = "The most used Ninja Warrior obstacles. When do they appear?",
+    subtitle = "<span style='font-size:16pt'>
+    <span style='color:#d8282b;'>Earliest position</span> and
+    <span style='color:#284c88;'>Latest position</span> of each obstacle.
+    </span>",
+    caption = "Tidy Tuesday Week 50 | Graphic: @danielpballer | Data: sasukepedia")+
+  scale_x_continuous(limits = c(0, 10), breaks = (1:10))+
+  theme_hc()+
+  theme(plot.subtitle = element_markdown(hjust = 0.5, family = "Diamante", 
+                                         face = "bold"),
+        plot.title = element_text(hjust = 0.5, size = 22, family = "Diamante", 
+                                  face = "bold"),
+        axis.text = element_text(family = "Diamante", size = 14, color = "black"),
+        axis.title = element_text(family = "Diamante", size = 14, color = "black"),
+        plot.caption = element_text(family = "Diamante", size = 10))
+```
+
