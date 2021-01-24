@@ -1,0 +1,160 @@
+---
+title: "2021_Week_4_Kenyan_Census"
+author: "MAJ Daniel Baller"
+date: "1/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+library(rKenyaCensus)
+library(sf)
+library(raster)
+library(broom)
+library(patchwork)
+library(scales)
+library(extrafont)
+```
+
+```{r}
+gender <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-19/gender.csv')
+crops <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-19/crops.csv')
+households <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-19/households.csv')
+
+```
+
+```{r saving data}
+write_csv(crops, "2021_Week4_Crops.csv")
+write_csv(crops, "2021_Week4_gender.csv")
+write_csv(crops, "2021_Week4_households.csv")
+```
+
+
+```{r}
+#puling in shape file and adding crops data
+shape = KenyaCounties_SHP
+#shape_df <- fortify(shape)
+
+crops = crops %>% mutate(County = SubCounty)
+
+#shape@data = inner_join(shape@data, crops)
+
+shape %>% 
+ggplot() +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = shape@data$Coffee), color="white") +
+  theme_void() 
+```
+
+
+```{r loading fonts}
+# Loading fonts
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+loadfonts()
+loadfonts(device = "win")
+fonts()
+```
+
+```{r}
+shape_tidy <- tidy(shape)
+
+ggplot(shape_tidy, aes(x = long, y = lat, group = group)) +
+  geom_polygon(color = "black", size = 0.1, fill = "lightgrey") +
+  coord_equal() +
+  theme_void()
+
+shape$id <- row.names(shape)
+shape_tidy <- left_join(shape_tidy, shape@data)
+shape_tidy <- left_join(shape_tidy, crops)
+shape_tidy <- left_join(shape_tidy, gender)
+shape_tidy <- left_join(shape_tidy, households[,-2])
+
+
+a = ggplot(shape_tidy, aes(x = long, y = lat, group = group, fill = Coffee)) +
+  geom_polygon(color = "black", size = 0.1) +
+  coord_equal() +
+  theme_void() +
+  #labs(title = "Where does Kenyan Coffee Come from?")+
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                       guide="colorbar",na.value="white", 
+                       #breaks = c(20000, 30000, 40000, 50000, 60000),
+                       label = comma)+
+  labs(fill = "Coffee Farmers")+
+  theme(legend.text=element_text(size=14, family = "Kenyan Coffee Rg"),
+        legend.title=element_text(size=14, family = "Kenyan Coffee Rg"))
+
+b = ggplot(shape_tidy, aes(x = long, y = lat, group = group, fill = Tea)) +
+  geom_polygon(color = "black", size = 0.1) +
+  coord_equal() +
+  theme_void() +
+  #labs(title = "Where does Kenyan Tea Come from?")+
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                       guide="colorbar",na.value="white", label = comma)+
+  labs(fill = "Tea Farmers")+
+  theme(legend.text=element_text(size=14, family = "Kenyan Coffee Rg"),
+        legend.title=element_text(size=14, family = "Kenyan Coffee Rg"))
+  
+c = crops %>% 
+  filter(County != "KENYA") %>%
+  filter(Coffee>0) %>% 
+  mutate(County = reorder(County, Coffee)) %>% 
+  top_n(13, Coffee) %>% 
+  ggplot(aes(y = County, x = Coffee, fill = Coffee))+
+  geom_col()+
+  labs(x = "Population growing coffee", y = NULL, 
+       title = "Top countys with coffee farmers",
+       fill = "Coffee Farmers")+
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                       guide="colorbar",na.value="white", label = comma)+
+  scale_x_continuous(label = comma)+
+  theme_classic()+
+  theme(legend.text=element_text(size=14, family = "Kenyan Coffee Rg"), 
+        legend.title=element_text(size=14, family = "Kenyan Coffee Rg"),
+        axis.text = element_text(size=14, family = "Kenyan Coffee Rg"), 
+        axis.title = element_text(size=14, family = "Kenyan Coffee Rg"),
+        plot.title = element_text(size=16, hjust = 0.5, family = "Kenyan Coffee Rg"))
+
+d = crops %>% 
+  filter(County != "KENYA") %>%
+  filter(Tea>0) %>% 
+  mutate(County = reorder(County, Tea)) %>% 
+  top_n(13, Tea) %>% 
+  ggplot(aes(y = County, x = Tea, fill = Tea))+
+  geom_col()+
+  labs(x = "Population growing Tea", y = NULL, 
+       title = "Top countys with tea farmers",
+       fill = "Tea Farmers")+
+  scale_fill_continuous(low="thistle2", high="darkred", 
+                       guide="colorbar",na.value="white", label = comma)+
+  scale_x_continuous(label = comma)+
+  theme_classic()+
+  theme(legend.text=element_text(size=14, family = "Kenyan Coffee Rg"), 
+        legend.title=element_text(size=14, family = "Kenyan Coffee Rg"),
+        axis.text = element_text(size=14, family = "Kenyan Coffee Rg"), 
+        axis.title = element_text(size=14, family = "Kenyan Coffee Rg"),
+        plot.title = element_text(size=16, hjust = 0.5, family = "Kenyan Coffee Rg"))
+
+#first attempt at combining plots
+ab = a+b 
+cd = c+d
+
+ab/cd +  plot_layout(heights = c(2,1), guides = 'collect')
+
+#2nd attempt at combining plots
+ac = a/c 
+bd = b/d
+acbd = ac|bd 
+
+final_plot = acbd + plot_annotation(theme = theme(plot.title = element_text(hjust = 0.5, size = 36, family = "Kenyan Coffee Rg"), plot.subtitle = element_text(hjust = 0.5, size = 24, family = "Kenyan Coffee Rg"), text = element_text(family = "Kenyan Coffee Rg")), title = "Who's Growing Kenyan Coffee and Tea?",subtitle = "Murang'a tops the list for coffee farmers, while Kisii has the most tea farmers.", caption = "Tidy Tuesday 2021 Week 4 | Graphic: @danielpballer | Data: rKenyaCensus")
+
+
+ggsave("final_plot.png", plot = final_plot, scale = 3)
+```
+
