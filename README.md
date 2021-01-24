@@ -1,6 +1,10 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+# 2021
+
+## Week 4 Kenyan Census
+<a href='Scripts_for_final_plots/2021_Week_4_Kenyan_Census_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/2021_Week_4_Kenyan_Census.png" align="center"/></a>
 
 # 2020
 ## Week 50 Ninja Warrior
