@@ -1,6 +1,8 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+
+# 2020
 ## Week 50 Ninja Warrior
 <a href='Scripts_for_final_plots/Week_50_Ninja_Warrior_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/Week_50_Ninja_Warrior.png" align="center"/></a>
 
