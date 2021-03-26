@@ -3,6 +3,9 @@ Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
 # 2021
 
+## Week 10 Super Bowl Ads
+<a href='Scripts_for_final_plots/2021_Week_10_Super_Bowl_Ads_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/2021_Week_10_Super_Bowl_Ads.png" align="center"/></a>
+
 ## Week 4 Kenyan Census
 <a href='Scripts_for_final_plots/2021_Week_4_Kenyan_Census_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/2021_Week_4_Kenyan_Census.png" align="center"/></a>
 
