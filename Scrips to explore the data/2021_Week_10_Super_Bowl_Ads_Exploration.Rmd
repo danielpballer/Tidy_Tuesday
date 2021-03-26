@@ -1,0 +1,182 @@
+---
+title: "2021_Week_10_Superbowl_Ads_Exploration"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggalluvial)
+library(igraph)
+library(colormap)
+library(ggraph)
+library(ggtext)
+library(extrafont)
+library(RColorBrewer)
+library(colorspace)
+```
+
+```{r}
+youtube <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
+```
+
+```{r loading fonts}
+# Loading fonts
+font_import("C:/Users/daniel.baller/AppData/Local/Microsoft/Windows/Fonts")
+loadfonts()
+loadfonts(device = "win")
+fonts()
+```
+
+```{r}
+youtube %>% count(brand) %>% arrange(desc(n))
+```
+
+```{r}
+youtube %>% 
+  select(year, brand, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex) %>% 
+  pivot_longer(cols = c(3:9), names_to = "Category", values_to = "YES") %>% filter(YES==TRUE) %>% 
+  group_by(year, brand, Category) %>% count() %>% 
+  filter(Category != "show_product_quickly") %>% 
+  ggplot(aes(axis1 = year, axis2 = brand, axis3 = Category, y = n)) +
+  scale_x_discrete(limits = c("Year", "Brand", "Category"), expand = c(.1, .01)) +
+  #xlab("") +
+  geom_alluvium(aes(fill = Category)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal() +
+  ggtitle("Top Ten Super Bowl Advertisers",
+          "How do they design their adds?") +
+  theme_void()+
+  theme(plot.title = element_text(hjust = .5),
+        plot.subtitle = element_text(hjust = .5),
+        legend.position = "None")
+
+?scale_x_discrete
+```
+
+Best Plot so far
+```{r}
+youtube %>% 
+  select(year, brand, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex) %>% 
+  pivot_longer(cols = c(3:9), names_to = "Category", values_to = "YES") %>% filter(YES==TRUE) %>% 
+  mutate(Category = case_when(Category == "use_sex"~"Use Sex",
+                              TRUE~Category)) %>% 
+  mutate(brand = fct_infreq(brand)) %>% 
+  group_by(brand, Category) %>% count() %>% 
+  filter(Category!="show_product_quickly") %>% 
+  ggplot(aes(axis1 = brand, axis2 = Category, y = n)) +
+  scale_x_discrete(limits = c("Brand", "Category"), expand = c(.2, .05)) +
+  #xlab("") +
+  geom_alluvium(aes(fill = brand)) +
+  scale_fill_brewer(palette = "Paired")+
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), family = "Freshman", size = 4) +
+  theme_minimal() +
+  ggtitle("Top Ten Super Bowl Advertisers",
+          "How do they design their adds?") +
+  labs(caption = "Tidy Tuesday 2021, Week 10 | Graphic: @danielpballer | Data:FiveThirtyEight") +
+  theme_void()+
+  theme(plot.title = element_text(hjust = .5, size = 24, family = "Freshman"),
+        plot.subtitle = element_text(hjust = .5,size = 16, family = "Freshman"),
+        plot.caption = element_text(size = 10),
+        legend.position = "None",
+        )
+
+
+```
+
+```{r}
+youtube %>% group_by(brand) %>% 
+  ggplot(aes(x = dislike_count, y = brand))+geom_boxplot()
+```
+
+```{r}
+youtube %>% 
+  select(year, brand, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex) %>% 
+  pivot_longer(cols = c(3:9), names_to = "Category", values_to = "YES") %>% filter(YES==TRUE) %>% 
+  mutate(brand = fct_infreq(brand)) %>% 
+  group_by(brand, Category) %>% count() %>% 
+  filter(Category!="show_product_quickly") %>% 
+  ggplot(aes(axis1 = Category, axis2 = brand, y = n)) +
+  scale_x_discrete(limits = c("Category", "Brand"), expand = c(.2, .05)) +
+  #xlab("") +
+  geom_alluvium(aes(fill = Category)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), family = "Freshman") +
+  theme_minimal() +
+  ggtitle("Top Ten Super Bowl Advertisers",
+          "How do they design their adds?") +
+  theme_void()+
+  theme(plot.title = element_text(hjust = .5, family = "Freshman"),
+        plot.subtitle = element_text(hjust = .5, family = "Freshman"),
+        legend.position = "None")
+```
+
+```{r}
+connect = youtube %>% 
+  select(year, brand, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex) %>% 
+  pivot_longer(cols = c(3:9), names_to = "Category", values_to = "YES") %>% filter(YES==TRUE) %>% 
+  mutate(brand = fct_infreq(brand))%>% 
+  select("from" = brand, "to" = Category)
+  #group_by(brand, Category) %>% count() %>% 
+  #filter(Category!="show_product_quickly") 
+
+c(as.character(connect$from), as.character(connect$to)) %>%
+  as.tibble() %>%
+  group_by(value) %>%
+  summarize(n=n()) -> connections
+colnames(connections) <- c("name", "n")
+
+# Create a graph object with igraph
+mygraph <- graph_from_data_frame(connect, vertices = connections, directed = FALSE )
+
+# Find community
+com <- walktrap.community(mygraph)
+#max(com$membership)
+
+connections <- connections %>% 
+  mutate( grp = com$membership) %>%
+  arrange(grp) %>%
+  mutate(name=factor(name, name))
+
+mygraph <- graph_from_data_frame(connect, vertices = connections, directed = FALSE )
+
+# prepare a vector of n color in the viridis scale
+mycolor <- colormap(colormap=colormaps$viridis, nshades=max(connections$grp))
+mycolor <- sample(mycolor, length(mycolor))
+
+# Make the graph
+ggraph(mygraph, layout="linear") + 
+  geom_edge_arc(edge_colour="black", edge_alpha=0.2, edge_width=0.3, fold=TRUE) +
+  geom_node_point(aes(size=n, color=as.factor(grp), fill=grp), alpha=0.5) +
+  scale_size_continuous(range=c(0.5,8)) +
+  scale_color_manual(values=mycolor) +
+  geom_node_text(aes(label=name), angle=65, hjust=1, nudge_y = -1.1, size=2.3) +
+  theme_void() 
+  # theme(
+  #   legend.position="none",
+  #   plot.margin=unit(c(0,0,0.4,0), "null"),
+  #   panel.spacing=unit(c(0,0,3.4,0), "null")
+  # ) +
+  # expand_limits(x = c(-1.2, 1.2), y = c(-5.6, 1.2)) 
+```
+
+```{r}
+youtube %>% 
+  select(year, brand, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex) %>% 
+  pivot_longer(cols = c(3:9), names_to = "Category", values_to = "YES") %>% filter(YES==TRUE) %>% 
+  mutate(Category = case_when(Category == "use_sex"~"Use Sex",
+                              TRUE~Category)) %>% 
+  mutate(brand = fct_infreq(brand)) %>% 
+  group_by(brand, Category) %>% count() %>% 
+  filter(Category!="show_product_quickly") %>% 
+  filter(brand == "NFL")
+
+pal <- choose_palette()
+
+```
+
