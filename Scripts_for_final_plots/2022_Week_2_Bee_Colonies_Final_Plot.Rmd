@@ -34,7 +34,7 @@ bump_data = colony %>%
   select(year, months, state, colony_lost, colony_added, net_change) %>%
   group_by(months) %>% 
   mutate(months = factor(months, levels = c("January-March", "April-June", "July-September", "October-December"))) %>% 
-  mutate(rank = rank(desc(net_change), ties.method = "random")) %>% 
+  mutate(rank = rank(net_change, ties.method = "random")) %>% 
   arrange(months, rank)
 ```
 

@@ -58,12 +58,12 @@ bump_data = colony %>%
   #group_by(year_month) %>% %>% 
   mutate(months = factor(months, levels = c("January-March", "April-June", "July-September", "October-December"))) %>% 
   #mutate(months = fct_reorder(months, c("January-March", "April-June", "July_September", "October-September"))) %>% 
-  mutate(rank = rank(desc(net_change), ties.method = "random")) %>% 
+  mutate(rank = rank(net_change, ties.method = "random")) %>% 
   arrange(months, rank) %>% 
  # mutate(label = emoji("bee"))
-  mutate(label = fontawesome("fa-bee")
+  mutate(label = fontawesome("fa-bee"))
 
-bump_data
+bump_data %>% as.data.frame()
 ```
 
 ```{r}
