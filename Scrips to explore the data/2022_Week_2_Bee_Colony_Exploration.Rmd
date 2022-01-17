@@ -79,7 +79,7 @@ bump_data %>% ggplot(aes(x = as.factor(months),
   ggdark::dark_theme_minimal() +
   scale_color_manual(values = met.brewer("OKeeffe1")) +
   labs(x = NULL, y = NULL, color = NULL,
-       title = "Net Bee Coloney Change Rankings for West Coast States in 2020",
+       title = "Net Bee Colony Change Rankings for West Coast States in 2020",
        subtitle = "Lower = more colony loss, Highter = more colony gain",
        caption = "Tidy Tuesday 2022, Week 2 | Graphic: @danielpballer | Data:USDA")+
   #theme_minimal_grid()+
