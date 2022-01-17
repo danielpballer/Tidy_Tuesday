@@ -1,6 +1,11 @@
 # Tidy_Tuesday
 Tidy Tuesday Plots and Code (Click on a plot to see the code)
 
+# 2022
+
+## Week 2 Bee Colonies
+<a href='Scripts_for_final_plots/2022_Week_2_Bee_Colonies_Final_Plot.Rmd' target='_blank'><img src="Final_Plots/2022_Week_2_Bee_Colonies.png" align="center"/></a>
+
 # 2021
 
 ## Week 10 Super Bowl Ads
