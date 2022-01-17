@@ -1,0 +1,95 @@
+---
+title: "2022_Week_2_Bee_Colony_Exploration"
+author: "MAJ Daniel Baller"
+date: "1/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(ggwaffle)
+library(ggbump)
+library(cowplot)
+library(ggdark)
+library(MetBrewer)
+library(PNWColors)
+library(emojifont)
+library(extrafont)
+```
+
+```{r reading in data}
+colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
+stressor <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/stressor.csv')
+```
+
+```{r saving Data}
+# write_csv(colony, "Week_2_2022_Colony.csv")
+# write_csv(stressor, "Week_2_2022_stressor.csv")
+```
+
+```{r}
+oregon = stressor %>% filter(state=="Oregon" & year==2020)
+```
+
+```{r loading fonts}
+font_import("C:/Windows/Fonts")
+loadfonts()
+loadfonts(device = "win")
+fonts()
+```
+
+```{r}
+bump_data = colony %>% 
+   filter(state %in% c("Arizona", "California", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming")) %>% 
+  filter(year==2020) %>% 
+  filter(state!="United States") %>% 
+  mutate(colony_lost = case_when(is.na(colony_lost)==TRUE~0,
+                                 TRUE~colony_lost)) %>% 
+  mutate(colony_added = case_when(is.na(colony_added)==TRUE~0,
+                                 TRUE~colony_added)) %>% 
+  mutate(net_change = colony_added-colony_lost) %>% 
+  select(year, months, state, colony_lost, colony_added, net_change) %>%
+  group_by(months) %>% 
+  # mutate(year_month = paste(year, months, sep = " ")) %>% 
+  #group_by(year_month) %>% %>% 
+  mutate(months = factor(months, levels = c("January-March", "April-June", "July-September", "October-December"))) %>% 
+  #mutate(months = fct_reorder(months, c("January-March", "April-June", "July_September", "October-September"))) %>% 
+  mutate(rank = rank(desc(net_change), ties.method = "random")) %>% 
+  arrange(months, rank) %>% 
+ # mutate(label = emoji("bee"))
+  mutate(label = fontawesome("fa-bee")
+
+bump_data
+```
+
+```{r}
+bump_data %>% ggplot(aes(x = as.factor(months), 
+                         y = rank, color = as.factor(state), group = state, label = label)) +
+  geom_point(size = 3) +
+  geom_bump(size = 1.5, smooth = 8)+
+  #geom_text(aes(y = rank+.3),family='fontawesome-webfont', size=10) +
+  geom_text(data = bump_data %>% filter(months == "January-March"),
+            aes(x = 1 - .1, label = state), size = 5, hjust = 1) +
+  geom_text(data = bump_data %>% filter(months == "October-December"),
+            aes(x = 4 + .1, label = state), size = 5, hjust = 0) +
+  ggdark::dark_theme_minimal() +
+  scale_color_manual(values = met.brewer("OKeeffe1")) +
+  labs(x = NULL, y = NULL, color = NULL,
+       title = "Net Bee Coloney Change Rankings for West Coast States in 2020",
+       subtitle = "Lower = more colony loss, Highter = more colony gain",
+       caption = "Tidy Tuesday 2022, Week 2 | Graphic: @danielpballer | Data:USDA")+
+  #theme_minimal_grid()+
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),
+        plot.title = element_text(hjust = .5, size = 24),
+        plot.subtitle = element_text(hjust = .5, size = 16),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 12))
+
+ggsave(filename = "week_2_bee_colonies.png", width = 6, height = 4)
+```
+
